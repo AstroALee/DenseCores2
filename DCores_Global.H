@@ -57,6 +57,9 @@ public:
 	double Rbdy;		// Density at radius of cylinder
 	double CylCsts[2];  // Constants needed for analytic Vpot outside cylinder
 
+	// waistband parameters
+	double wRatio;
+	
 	// Point mass parameters
 	double mExcess;		// mass excess beyond cylinder
 	int pointLoopMax;

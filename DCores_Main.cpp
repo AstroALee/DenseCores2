@@ -91,6 +91,9 @@ int ReadINI(Params& SimParams, int argc, char** filename)
     SimParams.lambda = reader.GetReal("cylinder","lambda",-1.0);
     SimParams.rTozPhys = reader.GetReal("cylinder","rTozPhys",-1.0);
 
+    // Waistband
+    SimParams.wRatio = reader.GetReal("waistband","wRatio",-1.0);
+
     // Point masses
     SimParams.mExcess = reader.GetReal("pointmasses","mExcess",-1.0);
     SimParams.pointLoopMax = reader.GetInteger("pointmasses","loopMax",-1);

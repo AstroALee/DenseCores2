@@ -95,13 +95,17 @@ void calcMagCylinder(Params& simP,TheState& curState,int dooutput)
             }
 
             // Debugging stuff
-            curState.State[Apot][i][j] = 0.97*curState.State[Apot][i][j];
+            // curState.State[Apot][i][j] = 0.97*curState.State[Apot][i][j];
         }
 
         // Want Vpot = 0 at top left corner
         // Should have that by default at this point
         double Vnorm = curState.State[Vpot][0][simP.N-1];
+
+        Vnorm = VEdge; // Filament boundary is the V=0 contour.
         for(i=0;i<simP.M;i++) for(j=0;j<simP.N;j++) curState.State[Vpot][i][j] = curState.State[Vpot][i][j] - Vnorm;
+
+
 
     } // end of dooutput
 

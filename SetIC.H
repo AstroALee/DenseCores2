@@ -13,6 +13,8 @@ int SetIC(Params& simP, TheState& curState);
 void unitConvert(Params& simP);
 void initVpoints(Params simP, TheState& curState, double undo, double smooth);
 void getVbdy(Params simP, TheState& curState);
+void setTheVbdy(Params simP, TheState& curState);
+void stretchV(Params simP, TheState& curState);
 void smoothV(Params simP, TheState& curState,double smooth);
 
 

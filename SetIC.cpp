@@ -21,12 +21,16 @@ int SetIC(Params& simP, TheState& curState)
 
     // Adds in points (changes only V)
     double firstsmoothlength = 10.0; // should be decently large so the filament boundary is accurate
-    initVpoints(simP, curState,1.0,firstsmoothlength);
+    //initVpoints(simP, curState, 1.0, firstsmoothlength);
 
     // Get the first filament boundary
-    getVbdy(simP, curState);
+    //getVbdy(simP, curState);
 
-    if(simP.mExcess > 0) smoothV(simP,curState,firstsmoothlength);
+    // Manually set filament boundary
+    setTheVbdy(simP, curState);
+
+    if(simP.wRatio>1) stretchV(simP,curState);
+    // if(simP.mExcess > 0) smoothV(simP,curState,firstsmoothlength);
 
     // Determine Q
     updateQ(simP, curState, 0); // needed?
@@ -66,8 +70,8 @@ void unitConvert(Params& simP)
     simP.Sol2Code = 1/solCodeMass;
 
     cout << "Unit conversions:" << endl;
-    cout << "  Parsec to Code = " << simP.Pc2Code << endl;
-    cout << "  Solar mass to Code = " << simP.Sol2Code << endl;
+    cout << "   Parsec to Code = " << simP.Pc2Code << endl;
+    cout << "   Solar mass to Code = " << simP.Sol2Code << endl;
 
     // Non-dimensionalize the physical lengths
     simP.zL = simP.zL*simP.Pc2Code;
@@ -181,6 +185,32 @@ void initVpoints(Params simP, TheState& curState, double undo, double smooth)
 };
 
 
+double radFromZed(double rT, double w, double zNorm)
+{
+    // zNorm should be 0 <= z/zL <= 1
+    if(zNorm < 0) zNorm = 0;
+    if(zNorm > 1) zNorm = 1;
+
+    // limits of x (mapping from finite limits instead of +-infty)
+    double xEdge = 3.0;
+
+    double xVal = -xEdge + (2.0*xEdge)*zNorm ;
+
+    double rad = rT + rT*(w-1.0)*(1.0-tanh(xVal))/2.0;
+
+    return(rad);
+};
+
+
+void setTheVbdy(Params simP, TheState& curState)
+{
+    for(int j=0;j<simP.N;j++)
+    {
+        double zNorm = cPos(j,simP.dZ)/simP.zL;
+        curState.VContour[j] = radFromZed(simP.rCyl, simP.wRatio, zNorm);
+    }
+};
+
 void getVbdy(Params simP, TheState& curState)
 {
     // Given V everywhre, find the V contour that goes through the lambda=simP.lambda filament boundary at the top
@@ -216,6 +246,58 @@ void getVbdy(Params simP, TheState& curState)
 
 };
 
+void stretchV(Params simP, TheState& curState)
+{
+    // Stretch the gravitational potential out so the filament boundary (manually set) is
+    // a potential contour.
+    double Vedge = 0.0;
+
+    for(int j=0;j<simP.N-1;j++) // no need to change top row
+    {
+        double VOrig[simP.M];
+        for(int i=0;i<simP.M;i++) VOrig[i] = curState.State[Vpot][i][j];
+
+        // Ratio of cylinder radius to filament boundary
+        double rRat = curState.VContour[j] / simP.rCyl;
+
+        for(int i=1;i<simP.M;i++) // no need to adjust left side
+        {
+            if( cPos(i,simP.dR) >= curState.VContour[j] ) break; // outside the filament
+
+            double curP = cPos(i,simP.dR);
+            // Find the two stretched cells the current cell resides
+            int kloc = 1;
+            for(int k=1;k<simP.M;k++)
+            {
+                kloc = k;
+
+                if( (curP >= rRat*cPos(k-1,simP.dR)) and (curP <= rRat*cPos(k,simP.dR)) )
+                {
+                    cout << "Breaking i,j = " << i << "," << j << " at k = " << kloc << endl;
+                    cout << "     " << curP << " " << rRat*cPos(k-1,simP.dR) << " " <<  (rRat*cPos(k,simP.dR)) << endl;
+                    break;
+                }
+
+            }
+
+            double m = ( VOrig[kloc] - VOrig[kloc-1] ) / ( rRat*simP.dR );
+            curState.State[Vpot][i][j] = VOrig[kloc-1] + m*( cPos(i,simP.dR) - rRat*cPos(kloc-1,simP.dR) );
+            //cout << "     " << curState.State[Vpot][i][j] << " " << curState.State[Vpot][kloc-1][j] << " " <<  curState.State[Vpot][kloc][j] << endl;
+
+
+        }
+
+    }
+
+
+
+
+    // we don't solve V outside the filament boundary, so let's just set it equal to 0 out there
+    for(int i=0;i<simP.M;i++) for(int j=0;j<simP.N;j++) if(cPos(i,simP.dR)>=curState.VContour[j]) curState.State[Vpot][i][j] = Vedge;
+
+
+};
+
 void smoothV(Params simP,TheState& curState,double smooth)
 {
 
@@ -230,7 +312,7 @@ void smoothV(Params simP,TheState& curState,double smooth)
 
     // potential is now just the cylinder
     // return here to have the potential be that of the cylinder
-    //return;
+    // return;
 
     for(int i=0;i<simP.M;i++) for(int j=0;j<simP.N;j++)
     {
