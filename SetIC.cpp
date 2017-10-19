@@ -273,8 +273,8 @@ void stretchV(Params simP, TheState& curState)
 
                 if( (curP >= rRat*cPos(k-1,simP.dR)) and (curP <= rRat*cPos(k,simP.dR)) )
                 {
-                    cout << "Breaking i,j = " << i << "," << j << " at k = " << kloc << endl;
-                    cout << "     " << curP << " " << rRat*cPos(k-1,simP.dR) << " " <<  (rRat*cPos(k,simP.dR)) << endl;
+                    //cout << "Breaking i,j = " << i << "," << j << " at k = " << kloc << endl;
+                    //cout << "     " << curP << " " << rRat*cPos(k-1,simP.dR) << " " <<  (rRat*cPos(k,simP.dR)) << endl;
                     break;
                 }
 

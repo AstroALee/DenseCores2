@@ -22,8 +22,8 @@ void SolvePoisson(Params simP,TheState curState,TheState& newState)
     VectorXd Soln = VectorXd::Zero((M)*(N));
 
     cout << "Creating Poisson matrix." << endl;
-    //createPoissonCstMatrix(simP,curState,PoMatrix,Source);
-    createPoissonVFixedMatrix(simP,curState,PoMatrix,Source);
+    //createPoissonCstMatrix(simP,curState,PoMatrix,Source);  // Solves Poisson everywhere
+    createPoissonVFixedMatrix(simP,curState,PoMatrix,Source); // Doesn't really solve Poisson outside of the filament
 
     // Now call LinAlgebra package to invert the matrix and obtain the new potential values
     //Soln = PoMatrix.householderQr().solve(Source);
@@ -53,7 +53,7 @@ void createPoissonVFixedMatrix(Params simP, TheState curState, MatrixXd& PoMatri
     double DeltaR = simP.dR; double DeltaZ = simP.dZ;
     int M = simP.M; int N = simP.N;
 
-    double Vedge = 0;
+    double Vedge = 0; // Potential value at the filament boundary
 
     // First, the source vector :  4*pi*dr^2*rho = 4*pi*dr^2*Q*exp(-V)
     for(s=0;s<M*N;s++)
@@ -69,7 +69,7 @@ void createPoissonVFixedMatrix(Params simP, TheState curState, MatrixXd& PoMatri
                 Source(s) = 4.0*PI*pow(DeltaR,2)*curState.State[Q][Ridx(s,M)][Zidx(s,M)]*exp(-curState.State[Vpot][Ridx(s,M)][Zidx(s,M)]);
             }
         }
-        else   // Outside the filament, rho = 0
+        else   // Outside the filament, rho = 0 (we will also fix V out here)
             Source(s) = 0.0;
     }
 
@@ -79,7 +79,7 @@ void createPoissonVFixedMatrix(Params simP, TheState curState, MatrixXd& PoMatri
     {
         double wi,f,Mleft,Mright,Mup,Mdown,Mcenter;
 
-        if( cPos(Ridx(s,M),DeltaR) == 0 )
+        if( cPos(Ridx(s,M),DeltaR) == 0 ) // left edge
         {
             // Useful numbers
             wi = 0;
@@ -131,26 +131,27 @@ void createPoissonVFixedMatrix(Params simP, TheState curState, MatrixXd& PoMatri
             Source(s) = curState.State[Vpot][Ridx(s,M)][Zidx(s,M)];
 
         }
-        else if( cPos(Ridx(s+1,M),DeltaR) > curState.VContour[Zidx(s,M)] ) // If we are less than a cell from the boundary
+        else if( cPos(Ridx(s,M)+1,DeltaR) > curState.VContour[Zidx(s,M)] ) // If we are less than a cell from the boundary
         {
             // Instead we will interpolate between the boundary value and the adjacent cell
 
 
-            double x = DeltaR / ( DeltaR + (curState.VContour[Zidx(s,M)] - cPos(Ridx(s,M),DeltaR)));
+            double x = DeltaR / ( DeltaR + (curState.VContour[Zidx(s,M)] - cPos(Ridx(s,M),DeltaR)) );
             Mleft = 1-x;
             Mright = 0;
             Mcenter = -1;
             Mup = 0;
             Mdown = 0;
 
-            Source(s) = -x*Vedge;
+            Source(s) = -x*Vedge; // which is just zero since Vedge = 0
 
 
         }
 
         // The right boundary employs a dV/dr = f(r,z) condition, so at r=M-1: V(M) = V(M-2) + 2*dr*f(r,z)
         // Assuming this is always outside the filament boundary
-        if( Ridx(s,M) == M-1 and 0)
+        #if(0) // the 'and 0' means we never actually use this
+        if( Ridx(s,M) == M-1)
         {
             // Uses Poisson equation and a ghost zone
             //Mleft = Mleft + Mright;
@@ -167,6 +168,7 @@ void createPoissonVFixedMatrix(Params simP, TheState curState, MatrixXd& PoMatri
             Source(s) = 6.0*DeltaR*VRight[Zidx(s,M)];
 
         }
+        #endif
 
         // Now we fill the entries of the matrix with the values
         PoMatrix(s,s) = Mcenter;

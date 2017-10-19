@@ -6,7 +6,7 @@
 #include "TheState.H"
 #include "UpdateQ.H"
 
-void SolvePertPoisson(Params simP,TheState curState,TheState& newState);
+void SolvePertPoisson(Params simP,TheState curState,TheState prevState,TheState& newState);
 
 
 

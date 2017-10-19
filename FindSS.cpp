@@ -21,17 +21,98 @@ void FindTheSteadyState(Params simP, TheState& curState)
 
 };
 
+void FindTheSteadyStateWithPert(Params simP, TheState& curState)
+{
+    // Need memory for the previous state and updated state
+    TheState preState(simP.M,simP.N);
+    TheState newState(simP.M,simP.N);
+    preState = curState;
+
+    // If this is the first time we're doing this, we need two regular updates
+    // before going into perturbation scheme.
+    SingleFullUpdate(simP,curState,newState);
+    preState = curState;
+    SingleFullUpdate(simP,curState,newState);
+
+    // At this point, curState and prevState are different, and both are solutions from
+    // regular Poisson/Ampere solves. Now we can enter the perturbation scheme to try
+    // and settle toward the equilibrium solution.
+    for(int i = 0; i<simP.convergeLoopMax; i++)
+    {
+        cout << "Performing single perturbation update " << i+1 << " (max allowed: " << simP.convergeLoopMax << ")" << endl;
+        PertFullUpdate(simP,curState,preState,newState);
+
+        if(convergeTest(simP, preState, curState)) break;
+        if(i==simP.convergeLoopMax-1) cout << "Perturbation: Convergence never reached!!" << endl;
+    }
+
+
+
+};
+
+void PertFullUpdate(Params simP,TheState& curState, TheState prevState, TheState& newState)
+{
+    // First we solve the perturbative Poisson equation, which might require several iterations itself
+    for(int j=0; j<simP.convergeLoopMax; j++)
+    {
+        SolvePertPoisson(simP, curState, prevState, newState);
+
+        // newState now has a new set of values for Delta V. Needs to be smaller than a certain threshold
+        int good = DeltaVcheck(simP,newState);
+        if(good) { Blend(simP,curState,newState); break;}
+
+        // The update was not good. Blend the curState and the prevState
+        cout << "Perturbation Poisson solve " << j << " was not good. Blending back and trying again." << endl;
+        curState.average(0.5,prevState);
+        updateQ(simP, curState, 0);
+        updateDQDPHI(simP, curState);
+    }
+
+    // If here, pert Poisson has converged. newState[Vpot] has new Vpot values (not just DeltaV)
+    SolveAmpere(simP,curState,newState); // newState now has new Ampere values
+    curState += newState; // relaxes
+    updateQ(simP, curState, 0);
+    updateDQDPHI(simP, curState);
+
+    // The full state has been updated
+
+};
+
 void SingleFullUpdate(Params simP,TheState curState,TheState& newState)
 {
     cout << "Starting single state update." << endl;
     SolvePoisson(simP,curState,newState);
     SolveAmpere(simP,curState,newState);
     curState += newState; // relaxes
-    //setVbdy(simP, curState); // comment this line out and the boundary location never changes. 
+    //setVbdy(simP, curState); // comment this line out and the boundary location never changes.
     updateQ(simP, curState, 0);
     updateDQDPHI(simP, curState);
 };
 
+void Blend(Params simP,TheState curState,TheState& newState)
+{
+    // DeltaV is good, so the newState values of DeltaV can be added with curState to get new V values
+    for(int i=0;i<simP.M;i++) for(int j=0;j<simP.N;j++) newState.State[Vpot][i][j] += curState.State[Vpot][i][j];
+
+}
+
+int DeltaVcheck(Params simP,TheState newState)
+{
+    int good = 1; // assumes we're good to go.
+
+    double maxval = 0;
+    for(int i=0;i<simP.M;i++) for(int j=0;j<simP.N;j++)
+    {
+        double locval = fabs(newState.State[Vpot][i][j]);
+
+        if( locval > maxval ) maxval = locval;
+    }
+
+    cout << "Maximum DeltaV value is " << maxval << endl;
+    if(maxval > 0.1) good = 0; // changes too large...
+
+    return(good);
+};
 
 int convergeTest(Params simP, TheState prevState, TheState curState)
 {
@@ -40,14 +121,14 @@ int convergeTest(Params simP, TheState prevState, TheState curState)
 
     // find maximum error in dV/dR for interior cells
     double DVmax = -1; int iloc,jloc;
-    for(int i=1;i<simP.M-1;i++) for(int j=1;j<simP.N-1;j++)
+    for(int i=2;i<simP.M-1;i++) for(int j=1;j<simP.N-1;j++)
     {
         // find local dV/dr
         double plocDVDR = (prevState.State[Vpot][i+1][j]-prevState.State[Vpot][i-1][j]); // /2.0/simP.dR;
         double locDVDR = (curState.State[Vpot][i+1][j]-curState.State[Vpot][i-1][j]); // /2.0/simP.dR;
 
         double locerr = 0;
-        if(plocDVDR!=0) locerr = fabs(locDVDR-plocDVDR)/fabs(plocDVDR);
+        if(plocDVDR!=0 and cPos(i,simP.dR)< curState.VContour[j]) locerr = fabs(locDVDR-plocDVDR)/fabs(plocDVDR); // don't care about outside filament
         if(locerr>DVmax)
         {
             DVmax = locerr;
@@ -89,7 +170,7 @@ int convergeTest(Params simP, TheState prevState, TheState curState)
         double locRHO = curState.State[Q][i][j] * exp(-curState.State[Vpot][i][j]);
 
         double locerr = 0;
-        if(plocRHO!=0) locerr = fabs(locRHO-plocRHO)/fabs(plocRHO);
+        if(plocRHO!=0 and cPos(i,simP.dR)< curState.VContour[j]) locerr = fabs(locRHO-plocRHO)/fabs(plocRHO);
         if(locerr>DVmax3 )
         {
             DVmax3 = locerr;
@@ -104,7 +185,8 @@ int convergeTest(Params simP, TheState prevState, TheState curState)
 
     cout << "Central density here is " << curState.State[Q][0][0] * exp(-curState.State[Vpot][0][0]) << endl;
 
-    if(DVmax <= simP.convergeLoopTol and DVmax2 <= simP.convergeLoopTol and DVmax3 <= simP.convergeLoopTol) done = 1;
+    //if(DVmax <= simP.convergeLoopTol and DVmax2 <= simP.convergeLoopTol and DVmax3 <= simP.convergeLoopTol) done = 1; // V, A, and rho need to be fixed
+    if(DVmax3 <= simP.convergeLoopTol) done = 1; // only rho needs to have settled down
     return done;
 };
 

@@ -43,7 +43,8 @@ int main(int argc, char *argv[])
     PrintState(SimParams,curState,"_","0");
 
     // Find the steady state!
-    FindTheSteadyState(SimParams,curState);
+    //FindTheSteadyState(SimParams,curState);
+    FindTheSteadyStateWithPert(SimParams,curState);
 
     PrintState(SimParams,curState,"_","1");
 
@@ -84,6 +85,8 @@ int ReadINI(Params& SimParams, int argc, char** filename)
     SimParams.convergeLoopMax = reader.GetInteger("simulation","loopMax",-1);
     SimParams.convergeLoopTol = reader.GetReal("simulation","loopTol",-1.0);
 
+    SimParams.relaxfrac = reader.GetReal("simulation","relaxfrac",-1.0);
+
 
     // Cylinder info
     SimParams.betaCyl = reader.GetReal("cylinder","beta",-1.0);
@@ -101,6 +104,8 @@ int ReadINI(Params& SimParams, int argc, char** filename)
 
     // outputs
     SimParams.outfname = reader.Get("output","filename","DEFAULTNAME");
+    SimParams.restart = reader.GetInteger("output","restart",0);
+    SimParams.readinfname = reader.Get("output","inputfn","DEFAULTNAME");
 
 
     std::cout << "Config loaded from " << filename[1] << ":" << endl

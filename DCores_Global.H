@@ -56,10 +56,11 @@ public:
 	double rCyl;		// radius of cylidner
 	double Rbdy;		// Density at radius of cylinder
 	double CylCsts[2];  // Constants needed for analytic Vpot outside cylinder
+	double relaxfrac; 	// state relaxation fraction
 
 	// waistband parameters
 	double wRatio;
-	
+
 	// Point mass parameters
 	double mExcess;		// mass excess beyond cylinder
 	int pointLoopMax;
@@ -69,6 +70,8 @@ public:
 
 	// Output
 	string outfname;
+	int restart;  // are we restarting from a file?
+	string readinfname; 
 
 	// Units
 	double Pc2Code,Sol2Code;
