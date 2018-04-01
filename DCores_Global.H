@@ -57,6 +57,7 @@ public:
 	double Rbdy;		// Density at radius of cylinder
 	double CylCsts[2];  // Constants needed for analytic Vpot outside cylinder
 	double relaxfrac; 	// state relaxation fraction
+	double denratio;
 
 	// waistband parameters
 	double wRatio;
@@ -64,26 +65,38 @@ public:
 	// Point mass parameters
 	double mExcess;		// mass excess beyond cylinder
 	int pointLoopMax;
-	int pointLoopTotNum;
+	int pointLoopTotNum; // converged number of point masses
 	double pointLoopTol;
+	double alpha_fac;
+	double Vknob; 
+
+
+	// SOR parameters
+	double SORtol;
+	double SORomega;
+	int SORnum;
 
 
 	// Output
 	string outfname;
 	int restart;  // are we restarting from a file?
-	string readinfname; 
+	string readinfname;
 
 	// Units
 	double Pc2Code,Sol2Code;
 
 
 	double *RhoTop;   // density at top, won't change
+	double *VTop;	  // V-potential at top (just cylinder)
+	double *ATop;	  // A-potential at top (just cylinder)
 
 protected:
 
 private:
 
 };
+
+
 
 // Index Generators
 // Row major on interior cells : i = Ridx + Zidx * M

@@ -266,6 +266,57 @@ double MCInt(Params simP, TheState curState)
     return sum;
 };
 
+double Trap2D(Params simP, TheState curState, double s0) // Simpson
+{
+    double sum = 0;
+
+    for(int i = 0; i < simP.M ; i++) for(int j = 0; j< simP.N ; j++)
+    {
+        double rz = curState.VContour[j];
+        double sFunc = 1.0 + s0*(cPos(j,simP.dZ) - simP.zL)*(cPos(i,simP.dR) - rz);
+        double curV = sFunc*curState.State[Vpot][i][j];
+        double curRho = curState.State[Q][i][j] * exp(-curV);
+        if(cPos(i,simP.dR)>curState.VContour[j]) { curRho = 0.0; continue; }
+
+        double curInt = curRho * cPos(i,simP.dR);
+
+        double curWeight = 1.0;
+        if( (i==0 or i==simP.M-1) and (j==0 or j==simP.N-1) )
+            {
+                curWeight = 1.0;
+            }
+        else if( (i==0) or (i==simP.M-1)  ) // won't be called if previous line is called
+            {
+                if(j%2==0) curWeight = 2.0;
+                else curWeight = 4.0;
+            }
+        else if( (j==0) or (j==simP.N-1) ) // won't be called if previous line is called
+            {
+                if(i%2==0) curWeight = 2.0;
+                else curWeight = 4.0;
+            }
+        else if( i%2==0 )
+            {
+                if(j%2==0) curWeight = 4.0;
+                else curWeight = 8.0;
+            }
+        else
+            {
+                if(j%2==0) curWeight = 8.0;
+                else curWeight = 16.0;
+            }
+
+        sum = sum + ( curWeight * curInt );
+    }
+
+    sum = 2.0 * 2.0*PI * sum ; // 2 for z integral, 2pi for theta integral
+
+    sum = (1.0/9.0) * simP.dR * simP.dZ * sum;
+
+    return sum;
+};
+
+
 double Trap2D(Params simP, TheState curState) // Simpson
 {
     double sum = 0;

@@ -26,6 +26,34 @@ TheState::TheState(int M, int N)
 
 };
 
+void TheState::relaxA(const TheState& relaxfrom)
+{
+	double relaxfrac = 0.5;
+
+	double M = relaxfrom.M;
+	double N = relaxfrom.N;
+
+	int k,j;
+	//for(j=0;j<M;j++) for(k=0;k<N;k++) this->State[Vpot][j][k] = relaxfrac*(this->State[Vpot][j][k]) + (1-relaxfrac)*(relaxfrom.State[Vpot][j][k]);
+	for(j=0;j<M;j++) for(k=0;k<N;k++) this->State[Apot][j][k] = relaxfrac*(this->State[Apot][j][k]) + (1-relaxfrac)*(relaxfrom.State[Apot][j][k]);
+
+	return;// *this;
+};
+
+void TheState::relaxV(const TheState& relaxfrom)
+{
+	double relaxfrac = 0.5;
+
+	double M = relaxfrom.M;
+	double N = relaxfrom.N;
+
+	int k,j;
+	for(j=0;j<M;j++) for(k=0;k<N;k++) this->State[Vpot][j][k] = relaxfrac*(this->State[Vpot][j][k]) + (1-relaxfrac)*(relaxfrom.State[Vpot][j][k]);
+	//for(j=0;j<M;j++) for(k=0;k<N;k++) this->State[Apot][j][k] = relaxfrac*(this->State[Apot][j][k]) + (1-relaxfrac)*(relaxfrom.State[Apot][j][k]);
+
+	return;// *this;
+};
+
 void TheState::average(double alpha, const TheState averagewith)
 {
 	int M = this->M;
@@ -57,7 +85,7 @@ TheState& TheState::operator=(const TheState& copyfrom)
 
 TheState& TheState::operator+=(const TheState& relaxfrom)
 {
-	double relaxfrac = 0.75;
+	double relaxfrac = 0.5;
 
 	double M = relaxfrom.M;
 	double N = relaxfrom.N;

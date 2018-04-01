@@ -6,6 +6,7 @@
 #include "TheState.H"
 
 void CylinderMassCheck(Params simP, TheState curState);
+double Trap2D(Params simP, TheState curState, double s0);
 double Trap2D(Params simP, TheState curState);
 double Trap2D_wrong(Params simP, TheState curState);
 double Trap2D_old(Params simP, TheState curState);

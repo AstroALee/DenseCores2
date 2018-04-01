@@ -19,7 +19,7 @@ OUTPUTNAME = FilamentCode
 
 all: Filament_Main
 
-Filament_Main : DCores_Main.o INIReader.o ini.o ErrorMessages.o TheState.o SetIC.o MagCylinder.o UpdateQ.o UpdateDQDPHI.o Integrals.o FindSS.o SolvePoisson.o SolveAmpere.o SolvePertPoisson.o 
+Filament_Main : DCores_Main.o INIReader.o ini.o ErrorMessages.o TheState.o SetIC.o MagCylinder.o UpdateQ.o UpdateDQDPHI.o Integrals.o FindSS.o SolvePoisson.o SolveAmpere.o SolvePertPoisson.o SolvePoissonSOR.o SolveAmpereSOR.o PrintState.o EvalV.o 
 	$(GCC) $(CPPFLAGS) -o $(OUTPUTNAME) $^
 	rm ./*.o
 

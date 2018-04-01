@@ -47,6 +47,11 @@ void updateQ(Params simP, TheState& curState, int type)
     i=0; while(true){ i++; if(cPos(i,DeltaR)>=curState.VContour[simP.N-1]) break; }
     double m = ( QMap[i] - QMap[i-1] )/DeltaR;
     double Qedge = QMap[i-1] + m*(curState.VContour[simP.N-1] - cPos(i-1,DeltaR));
+    m = ( PhiMap[i] - PhiMap[i-1] )/DeltaR;
+    double Phiedge = PhiMap[i-1] + m*(curState.VContour[simP.N-1] - cPos(i-1,DeltaR));
+
+    // This will assume that the Phi contour through this point moves either vertically
+    // down or inward. We will set Q = Qedge for all phi contours right of this contour.
 
     // Beyond the boundary, we use this Q value.
     for(i=0;i<simP.M;i++) if(cPos(i,DeltaR)>=curState.VContour[simP.N-1]) QMap[i] = Qedge;
@@ -57,8 +62,9 @@ void updateQ(Params simP, TheState& curState, int type)
     // Now for every other cell, use map to interpolate a value of Q
     for(i=0;i<simP.M;i++) for(j=0;j<simP.N-1;j++) // skipping the top row
     {
-        // If right of the contour, who cares
+        // If right of the contour (V or Phi), who cares
         if(cPos(i,DeltaR) >= curState.VContour[j]){ curState.State[Q][i][j]=Qedge; continue; }
+        if(cPos(i,DeltaR)*curState.State[Apot][i][j] >= Phiedge){ curState.State[Q][i][j]=Qedge; continue; }
 
         // did we succeed?
         int yay=0;

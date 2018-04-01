@@ -47,8 +47,11 @@ void calcMagCylinder(Params& simP,TheState& curState,int dooutput)
 
     if(dooutput)
     {
-        // The cylinder solution is good to go. Set rho (will not change) , non-dim
+        // The cylinder solution is good to go. Set rho and V (will not change) , non-dim
         for(int i=0 ; i<simP.M; i++) simP.RhoTop[i] = LInt(out.xsave,out.ysave,cPos(i,simP.dR),out.count,0); // 0 = Rho
+        for(int i=0 ; i<simP.M; i++) simP.VTop[i] = LInt(out.xsave,out.ysave,cPos(i,simP.dR),out.count,1); // 1 = V
+        for(int i=1 ; i<simP.M; i++) simP.ATop[i] = LInt(out.xsave,out.ysave,cPos(i,simP.dR),out.count,3)/cPos(i,simP.dR); // 3 = (A*r)/r
+        simP.ATop[0] = 0;
 
         // Outside the filament, we use the analytic form for the potential, need V and dV/dR at this location
         double VEdge = LInt(out.xsave,out.ysave,rEdge,out.count,1); // Vpot
@@ -65,6 +68,7 @@ void calcMagCylinder(Params& simP,TheState& curState,int dooutput)
         double C2 = VEdge;
         simP.CylCsts[0] = C1;
         simP.CylCsts[1] = C2;
+        cout << "Cylinder constants C1*ln(r/rEdge) + C2 , C1 = " << C1 << " , C2 = " << C2 << " , rEdge = " << rEdge << endl;
 
         int i,j;
         for(i=0;i<simP.M;i++) for(j=0;j<simP.N;j++)
@@ -102,8 +106,15 @@ void calcMagCylinder(Params& simP,TheState& curState,int dooutput)
         // Should have that by default at this point
         double Vnorm = curState.State[Vpot][0][simP.N-1];
 
-        Vnorm = VEdge; // Filament boundary is the V=0 contour.
+        Vnorm = VEdge; // Filament boundary is the V=0 contour, NOT the top-left corner.
         for(i=0;i<simP.M;i++) for(j=0;j<simP.N;j++) curState.State[Vpot][i][j] = curState.State[Vpot][i][j] - Vnorm;
+        for(i=0;i<simP.M;i++) simP.VTop[i] = simP.VTop[i] - Vnorm;
+
+        //for(i=0;i<simP.M;i++) if(simP.VTop[i]>0) simP.VTop[i] = 0;
+
+        cout << "VTop = " << simP.VTop[0];
+        for(i=1;i<simP.M;i++) cout << ", " << simP.VTop[i];
+        cout << endl;
 
 
 

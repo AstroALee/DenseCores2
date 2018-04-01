@@ -8,10 +8,11 @@
 #include "UpdateQ.H"
 #include "UpdateDQDPHI.H"
 #include "Integrals.H"
+#include "EvalV.H"
 
 int SetIC(Params& simP, TheState& curState);
 void unitConvert(Params& simP);
-void initVpoints(Params simP, TheState& curState, double undo, double smooth);
+void initVpoints(Params& simP, TheState& curState, double undo, double smooth);
 void getVbdy(Params simP, TheState& curState);
 void setTheVbdy(Params simP, TheState& curState);
 void stretchV(Params simP, TheState& curState);

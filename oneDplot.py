@@ -8,6 +8,10 @@ import sys
 
 import AnalyticSolutions as AS
 
+
+Voffset = -2.77262
+
+
 # Colors
 dmagenta = '#DB1672'
 dgreen = '#259B41'
@@ -178,11 +182,11 @@ if(PlotEQ):
     XCordAnal = rL*linspace(0,1,10*M)
     print(beta)
     if(idx==4):
-        Yanal = [ AS.Veqn(i,VCont[0],beta,data[8,N-1]) for i in XCordAnal]
+        Yanal = [ AS.Veqn(i,VCont[0],beta,data[8,N-1],Voffset) for i in XCordAnal]
     elif(idx==5):
         Yanal = [ AS.Aeqn(i,VCont[0],beta,data[8,N-1],Rbdy,nCyl) for i in XCordAnal]
     elif(idx==6):
-        Yanal = [ AS.Qeqn(i,VCont[0],beta,data[8,N-1]) for i in XCordAnal]
+        Yanal = [ AS.Qeqn(i,VCont[0],beta,data[8,N-1],Voffset) for i in XCordAnal]
     elif(idx==7):
         Yanal = [ AS.RHOeqn(i,VCont[0],beta,data[8,N-1]) for i in XCordAnal]
     elif(idx==8):
@@ -299,7 +303,10 @@ if(PlotAS and Slice=='Z'):
     linewidth=2
     clr = 'red'
     if(PlotEQ):
-        if(idx>=4 and idx<=9): plt.plot(XCordAnal,Yanal,'--',color=clr,linewidth=linewidth,label=r'Analytic')
+        if(idx>=4 and idx<=9):
+            if(idx==4):
+                Yanal = Yanal #+ Voffset
+            plt.plot(XCordAnal,Yanal,'--',color=clr,linewidth=linewidth,label=r'Analytic')
     else:
         if(idx==4): plt.plot(AS.R[beta],AS.V[beta],'--',color=clr,linewidth=linewidth,label=r'Analytic')
         if(idx==5): plt.plot(AS.R[beta],AS.A[beta],'--',color=clr,linewidth=linewidth,label=r'Analytic')

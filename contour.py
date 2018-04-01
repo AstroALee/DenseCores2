@@ -6,7 +6,12 @@ from numpy import *
 import scipy as spi
 import sys
 
-cmapalpha = 0.75
+cmapalpha = 0.6
+
+#over ride
+oride=0
+CminOR = -35
+CmaxOR = 0
 
 # INPUTS
 # ----
@@ -112,7 +117,7 @@ if( len(sys.argv) > 5 ):
 # If B fields, plot field lines with equal
 BContours = []
 if(Bfield=='Y'):
-    curR = rL/10.0 #first anchor point
+    curR = rL/6.0 #first anchor point
     lastR = 0
     PhiArray = multiply(Rpos,data[5,:]) # we draw contours of constant phi
     botRowR = [ Rpos[k] for k in range(int(M*N)) if (k%(int(N))==0) ] # bottom row R values
@@ -150,8 +155,13 @@ if(Bfield=='Y'):
         BContours.append(curCont)
 
 # CONTOURS
-cmapmin = plotmin
-cmapmax = plotmax
+if(oride):
+    cmapmin = CminOR #plotmin
+    cmapmax = CmaxOR #plotmax
+else:
+    cmapmin = plotmin
+    cmapmax = plotmax
+
 if(idx==7):
     #cmapmin = 1.0 # Density
     cmapmin = plot2min
@@ -191,13 +201,14 @@ plt.axis([0, rPlotmax, 0, zPlotmax])
 
 # Axis labels
 if(Units):
-    plt.xlabel(r'Distance   $R$  (pc)') #TeX requires the r
-    plt.ylabel(r'Distance   $Z$  (pc)')
+    plt.xlabel(r'Distance   R  (pc)',fontsize=15) #TeX requires the r
+    plt.ylabel(r'Distance   Z  (pc)',fontsize=15)
 else:
-    plt.xlabel(r'Distance   $R$   (nd)') #TeX requires the r
-    plt.ylabel(r'Distance   $Z$   (nd)')
+    plt.xlabel(r'Distance     R',fontsize=15) #TeX requires the r
+    plt.ylabel(r'Distance     Z',fontsize=15)
 
 # Plot Titles
+
 if(idx==0): plt.title(r'R Grid id')
 if(idx==1): plt.title(r'Z Grid id')
 if(idx==2): plt.title(r'R Distance')
@@ -207,6 +218,7 @@ if(idx==5): plt.title(r'A')
 if(idx==6): plt.title(r'Q')
 if(idx==8): plt.title(r'Density')
 if(idx==9): plt.title(r'Phi')
+
 
 #Moves the x-axis down a little
 plt.gca().xaxis.labelpad=5 #5 is default
@@ -237,8 +249,12 @@ if(Units):
 # Overwrite min max plotted
 #plotmin = 0
 #plotmax = 20
-cmapmin = plotmin
-cmapmax = plotmax
+if(oride):
+    cmapmin = CminOR
+    cmapmax = CmaxOR
+else:
+    cmapmin = plotmin
+    cmapmax = plotmax
 
 # ColorMap choice
 cmap = 'Paired'
@@ -249,13 +265,16 @@ if(cmapalpha>0):
     plt.pcolor(RGrid,ZGrid,PreparedPlot,cmap=cmap,vmin=cmapmin,vmax=cmapmax,alpha=cmapalpha)
     plt.colorbar()
 
+
+# override
+#CLevels = [ 0.5, 0.75, 1, 1.25, 1.5  ]
 CS = plt.contour(RMesh,ZMesh,PreparedPlot,levels=CLevels,colors='k',linewidths=2.5)
-plt.clabel(CS, inline=1, fontsize=9)
+#plt.clabel(CS, inline=1, fontsize=9)
 
 # Filament Boundary
 area = pi*2.0
-plt.scatter(VCont,(ZGrid[:-1]+0.5*DeltaZ),s=1.5*area,c='black')
-plt.plot(VCont,(ZGrid[:-1]+0.5*DeltaZ),c='black',linewidth=1,alpha=0.3)
+#plt.scatter(VCont,(ZGrid[:-1]+0.5*DeltaZ),s=1.5*area,c='black')
+plt.plot(VCont,(ZGrid[:-1]+0.5*DeltaZ),c='black',linewidth=2.5,alpha=0.3)
 
 # B fields
 if(Bfield=='Y'):

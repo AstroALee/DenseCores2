@@ -18,6 +18,10 @@ public:
 	TheState& operator+=(const TheState& relaxfrom);
 
 	void average(double alpha, const TheState averagewith);
+	void relaxV(const TheState& copyfrom);
+	void relaxA(const TheState& copyfrom);
+
+
 
 protected:
 private:

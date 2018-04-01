@@ -17,23 +17,31 @@ int SetIC(Params& simP, TheState& curState)
     calcMagCylinder(simP,curState,1);
 
     // Determine Q
-    updateQ(simP, curState, 0);
+    //updateQ(simP, curState, 0);
+    //simP.alpha_fac = 0.25;
 
     // Adds in points (changes only V)
-    double firstsmoothlength = 10.0; // should be decently large so the filament boundary is accurate
-    //initVpoints(simP, curState, 1.0, firstsmoothlength);
+    double firstsmoothlength = 100.0; // should be decently large so the filament boundary is accurate (smooth length = zL/firstsmoothlength)
+    initVpoints(simP, curState, 1.0, firstsmoothlength);
 
     // Get the first filament boundary
-    //getVbdy(simP, curState);
+    getVbdy(simP, curState);
+
+    //initVpoints(simP, curState, -1.0, firstsmoothlength); // not needed if stretchV is used.
 
     // Manually set filament boundary
-    setTheVbdy(simP, curState);
+    //setTheVbdy(simP, curState);
 
-    if(simP.wRatio>1) stretchV(simP,curState);
+    // Stretches the cylinder solution at the top from r=0 to the local filament boundary
+    // (overwrites V everywhere)
+    stretchV(simP,curState);
+
+    // not used anymore
+    // if(simP.wRatio>1) stretchV(simP,curState);
     // if(simP.mExcess > 0) smoothV(simP,curState,firstsmoothlength);
 
     // Determine Q
-    updateQ(simP, curState, 0); // needed?
+    updateQ(simP, curState, 0);
 
     // Calculate dQ/dPhi
     updateDQDPHI(simP, curState);
@@ -85,7 +93,7 @@ void unitConvert(Params& simP)
 
 };
 
-void initVpoints(Params simP, TheState& curState, double undo, double smooth)
+void initVpoints(Params& simP, TheState& curState, double undo, double smooth)
 {
     int M = simP.M;
     int N = simP.N;
@@ -149,7 +157,7 @@ void initVpoints(Params simP, TheState& curState, double undo, double smooth)
                 if(locerr > err) err = locerr;
             }
 
-            if(PPidx%50==0 || err <= PointLoopTol) cout << "Loop " << PPidx << " : Number of Points = " << 1+(PPidx-1)*2 << " (Max error = " << err << ")" << endl;
+            if(PPidx%100==0 || err <= PointLoopTol) cout << "Loop " << PPidx << " : Number of Points = " << 1+(PPidx-1)*2 << " (Max error = " << err << ")" << endl;
 
             // Is the max error small enough?
             if(err <= PointLoopTol) { PointLoopMax = PPidx; break; }
@@ -174,9 +182,18 @@ void initVpoints(Params simP, TheState& curState, double undo, double smooth)
 
     // If we're here, we have converged.
     simP.pointLoopTotNum = PointLoopMax; // has been over-written to be the number of iterations used
+    cout << "Number of loop iterations required: " << PointLoopMax << endl;
 
     // Normalize so that the upper-left corner has Vpot=0
     double Vnorm = PointV[0][N-1];
+
+    // actually normalize so V at edge of cylinder is V=0
+    i = 0;
+    while(true){ i++; if(cPos(i,simP.dR) >= simP.rCyl) break;}
+    double x = (cPos(i,simP.dR) - simP.rCyl)/simP.dR ;
+    Vnorm = x*PointV[i-1][N-1] + (1-x)*PointV[i][N-1];
+    cout << "Initial Vpoints normalization is " << Vnorm << endl;
+
     for(i=0;i<M;i++) for(j=0;j<N;j++) PointV[i][j] = PointV[i][j] - Vnorm;
 
     // Add solution to the potential
@@ -248,19 +265,27 @@ void getVbdy(Params simP, TheState& curState)
 
 void stretchV(Params simP, TheState& curState)
 {
-    // Stretch the gravitational potential out so the filament boundary (manually set) is
+    // Stretch the top gravitational potential out so the filament boundary (manually set) is
     // a potential contour.
     double Vedge = 0.0;
 
-    for(int j=0;j<simP.N-1;j++) // no need to change top row
+    double VOrig[simP.M];
+    for(int i=0;i<simP.M;i++) VOrig[i] = Veval( i, simP.N-1, simP);
+
+    //for(int i=0;i<simP.M;i++) cout << curState.State[Vpot][i][simP.N-1] << " , " << VOrig[i] << " , " << (curState.State[Vpot][i][simP.N-1]-VOrig[i])/curState.State[Vpot][i][simP.N-1] << endl;
+
+
+
+
+    for(int j=0;j<simP.N;j++)
     {
-        double VOrig[simP.M];
-        for(int i=0;i<simP.M;i++) VOrig[i] = curState.State[Vpot][i][j];
+        //double VOrig[simP.M];
+        //for(int i=0;i<simP.M;i++) VOrig[i] = curState.State[Vpot][i][j];
 
         // Ratio of cylinder radius to filament boundary
         double rRat = curState.VContour[j] / simP.rCyl;
 
-        for(int i=1;i<simP.M;i++) // no need to adjust left side
+        for(int i=0;i<simP.M;i++)
         {
             if( cPos(i,simP.dR) >= curState.VContour[j] ) break; // outside the filament
 
@@ -289,11 +314,52 @@ void stretchV(Params simP, TheState& curState)
 
     }
 
+    /*
+    double Vdepth = VOrig[0];
+    double lVball = cPos(simP.M/2,simP.dR);
+    for(int i=0;i<simP.M;i++)
+        for(int j=0;j<simP.N;j++)
+        {
+            double curPos = sqrt( pow(cPos(i,simP.dR),2) + pow(cPos(j,simP.dZ),2) );
+            if(curPos < lVball)
+            {
+                curState.State[Vpot][i][j] = curState.State[Vpot][i][j] + 0.25*Vdepth*(1.0-curPos/lVball);
+            }
+        }
+    */
+
+
+    // At this point, V is stretched out in the radial direction
+    // If we are using the Vknob formulation, we can also smooth the initial conditions toward the value of the knob
+    // If alteration is V(r) = aR^2 + bR + c,
+    // requiring V(0) = Vknob -->  c = Vknob
+    // requiring dVdr(0) = 0 --> b = 0
+    // requiring V(rBdy) = 0 --> a rBdy^2 + Vknob = 0 --> a = -Vknob / rBdy^2
+    // where rBdy is the radius of the filament bounary at z = 0
+    double Vknob = -1.0*simP.Vknob ;
+    double rBdybttm = curState.VContour[0] ;
+    double aCst = -Vknob/rBdybttm/rBdybttm;
+
+    for(int i=0;i<simP.M;i++)
+        for(int j=0;j<simP.N;j++)
+        {
+            double Vmax = aCst * pow(cPos(i,simP.dR),2) + Vknob;
+            if(Vmax>0) continue;
+
+            // No change at top, Vmax change at bottom
+            // DeltaV = a + b*Z
+            // DeltaV = 0 at top --> a + b*zL = 0 --> b = -a/zL
+            // DeltaV = Vmax at bottom --> a = Vmax --> b = -Vmax/zL
+            curState.State[Vpot][i][j] = curState.State[Vpot][i][j] + Vmax - (Vmax/simP.zL)*cPos(j,simP.dZ);
+
+        }
 
 
 
     // we don't solve V outside the filament boundary, so let's just set it equal to 0 out there
-    for(int i=0;i<simP.M;i++) for(int j=0;j<simP.N;j++) if(cPos(i,simP.dR)>=curState.VContour[j]) curState.State[Vpot][i][j] = Vedge;
+    for(int i=0;i<simP.M;i++)
+        for(int j=0;j<simP.N;j++)
+            if(cPos(i,simP.dR)>=curState.VContour[j]) curState.State[Vpot][i][j] = Vedge;
 
 
 };

@@ -36,6 +36,13 @@ int main(int argc, char *argv[])
     errTag = SetIC(SimParams,curState);
     if(errTag) { Waterloo("main","error setting initial conditions"); return 1; }
 
+    // If restarting, checks that the setup is correct and overwrites state
+    if(SimParams.restart)
+    {
+        errTag = LoadRestart(SimParams,curState);
+        if(errTag) { Waterloo("main","restarting from file with different parameters"); return 1; }
+    }
+
     // Mass in box
     CylinderMassCheck(SimParams,curState);
 
@@ -44,9 +51,14 @@ int main(int argc, char *argv[])
 
     // Find the steady state!
     //FindTheSteadyState(SimParams,curState);
-    FindTheSteadyStateWithPert(SimParams,curState);
+    //FindTheSteadyStateWithPert(SimParams,curState);
+    //FindTheSteadyStateWithSOR(SimParams, curState);
+    //FindTheSteadyStateWithAlpha(SimParams, curState);
+    //FindSSVQloopAlpha(SimParams, curState);
+    //FindSSVfixedTopBot(SimParams, curState);
+    FindSSGlobalRescaling(SimParams, curState);
 
-    PrintState(SimParams,curState,"_","1");
+    //PrintState(SimParams,curState,"_","1");
 
     // Mass in box
     CylinderMassCheck(SimParams,curState);
@@ -63,6 +75,93 @@ int main(int argc, char *argv[])
     return 0;
 };
 
+
+int LoadRestart(Params& simP, TheState& curState)
+{
+    int i,j,k;
+
+    string ReadFile;
+    ReadFile = simP.readinfname ;
+
+    cout << "Reading curState from file " << ReadFile << endl;
+
+    //OutFile = OutFileName.c_str() + num.c_str();
+
+    ifstream myfile;
+    myfile.open(ReadFile.c_str());
+
+    string line;
+    getline(myfile, line); // first line has various parameters
+    stringstream linestream(line);
+
+    string data;
+    getline(linestream, data, ','); // Reads in M
+    if( atoi(data.c_str()) != simP.M) {myfile.close(); cout << "ERROR with M!" << endl; return(1);}
+    getline(linestream, data, ','); // Reads in N
+    if( atoi(data.c_str()) != simP.N) {myfile.close(); cout << "ERROR with N!" << endl; return(1);}
+    getline(linestream, data, ','); // Reads in zL
+    if( (atof(data.c_str()) - simP.zL)/simP.zL > 1e-4) {myfile.close(); cout << "ERROR with zL!" << endl; return(1);}
+    getline(linestream, data, ','); // Reads in rL
+    if( (atof(data.c_str()) - simP.rL)/simP.rL > 1e-4) {myfile.close(); cout << "ERROR with rL!" << endl; return(1);}
+    getline(linestream, data, ','); // Reads in mExcess
+    getline(linestream, data, ','); // Reads in betaCyl
+    if( (atof(data.c_str()) - simP.betaCyl)/simP.betaCyl > 1e-4) {myfile.close(); cout << "ERROR with betaCyl!" << endl; return(1);}
+    getline(linestream, data, ','); // Reads in nCyl
+    if( (atof(data.c_str()) - simP.nCyl)/simP.nCyl > 1e-4) {myfile.close(); cout << "ERROR with nCyl!" << endl; return(1);}
+    getline(linestream, data, ','); // Reads in Rbdy
+    getline(linestream, data, ','); // Reads in lambda
+    if( (atof(data.c_str()) - simP.lambda)/simP.lambda > 1e-4) {myfile.close(); cout << "ERROR with lambda!" << endl; return(1);}
+    getline(linestream, data, ','); // Reads in Pc2Code
+    getline(linestream, data, ','); // Reads in Sol2Code
+
+    /*
+    // First print inputs as the first line
+    myfile << simP.M << "," << simP.N << "," << simP.zL << "," << simP.rL << ","
+        << simP.mExcess << "," << simP.betaCyl << "," << simP.nCyl << "," << simP.Rbdy << ","
+        << simP.lambda << "," << simP.Pc2Code << "," << simP.Sol2Code << endl;
+    */
+
+
+    getline(myfile, line); // second line has contour boundary, which might change
+
+    for(i=0;i<simP.M;i++) for(j=0;j<simP.N;j++) // this should match the file output order
+    {
+        getline(myfile, line); // grab next line
+        stringstream linestream(line); // make it a string stream
+
+        // parse
+        // first four entries aren't needed
+        getline(linestream, data, ',');getline(linestream, data, ',');
+        getline(linestream, data, ',');getline(linestream, data, ',');
+
+        // next two are meaningful
+        getline(linestream, data, ','); // Vpot
+        if( cPos(i,simP.dR) >= curState.VContour[j] ) curState.State[Vpot][i][j] = 0; // outside
+        else if ( cPos(i+1,simP.dR) >= curState.VContour[j] ) // next to
+        {
+            // interpolate so Vbdy is still V = 0 contour.
+            // assumes curState.State[Vpot][i-1][j] has already been read in.
+            double m = (0 - curState.State[Vpot][i-1][j])/(simP.dR + (curState.VContour[j] - cPos(i,simP.dR)) );
+            curState.State[Vpot][i][j] = curState.State[Vpot][i-1][j] + m*(simP.dR) ;
+        }
+        else curState.State[Vpot][i][j] = atof(data.c_str());
+
+        getline(linestream, data, ','); // Apot
+        curState.State[Apot][i][j] = atof(data.c_str());
+
+
+    }
+
+
+
+
+    myfile.close();
+
+    updateQ(simP, curState, 0);
+    updateDQDPHI(simP, curState);
+
+    return(0);
+};
 
 int ReadINI(Params& SimParams, int argc, char** filename)
 {
@@ -87,6 +186,8 @@ int ReadINI(Params& SimParams, int argc, char** filename)
 
     SimParams.relaxfrac = reader.GetReal("simulation","relaxfrac",-1.0);
 
+    SimParams.denratio = reader.GetReal("simulation","dRatio",-1.0);
+
 
     // Cylinder info
     SimParams.betaCyl = reader.GetReal("cylinder","beta",-1.0);
@@ -94,13 +195,22 @@ int ReadINI(Params& SimParams, int argc, char** filename)
     SimParams.lambda = reader.GetReal("cylinder","lambda",-1.0);
     SimParams.rTozPhys = reader.GetReal("cylinder","rTozPhys",-1.0);
 
+
     // Waistband
     SimParams.wRatio = reader.GetReal("waistband","wRatio",-1.0);
 
-    // Point masses
+    // SOR
+    SimParams.SORtol = reader.GetReal("SOR","looptol",-1.0);
+    SimParams.SORomega = reader.GetReal("SOR","omega",1.0);
+    SimParams.SORnum = reader.GetInteger("SOR","loopmax",1);
+
+
+    // Point masses Vknob
+    SimParams.Vknob = reader.GetReal("pointmasses","Vknob",-1.0);
     SimParams.mExcess = reader.GetReal("pointmasses","mExcess",-1.0);
     SimParams.pointLoopMax = reader.GetInteger("pointmasses","loopMax",-1);
     SimParams.pointLoopTol = reader.GetReal("pointmasses","loopTol",-1.0);
+    SimParams.alpha_fac = reader.GetReal("pointmasses","alpha_fac",0.0);
 
     // outputs
     SimParams.outfname = reader.Get("output","filename","DEFAULTNAME");
@@ -121,20 +231,24 @@ int ReadINI(Params& SimParams, int argc, char** filename)
 
 int CheckArgs(Params SimP)
 {
+    int bad = 0;
+
     if( SimP.M < 3 || SimP.N < 3)
     {
         cout << "The number of grid cells is weird. "
              << "You provided (M,N) = (" << SimP.M << "," << SimP.N << ")" << endl;
+             bad = 1;
     }
 
     if( SimP.rL < 0 || SimP.zL < 0)
     {
         cout << "The size of the box is weird. "
              << "You provided (rL,zL) = (" << SimP.rL << "," << SimP.zL << ")" << endl;
+             bad = 1;
     }
 
     // all went well
-    return 0;
+    return bad;
 
 };
 
@@ -150,6 +264,8 @@ int Derived(Params& SimP)
 
     // Allocate
     SimP.RhoTop   = new double[SimP.M];
+    SimP.VTop     = new double[SimP.M];
+    SimP.ATop     = new double[SimP.M];
 
 
     // All went well
@@ -159,48 +275,4 @@ int Derived(Params& SimP)
 void ExecutionTime(clock_t start, clock_t end )
 {
     cout << "Execution took " << double( end - start ) / (double)CLOCKS_PER_SEC << " seconds." << endl;
-};
-
-
-// Prints out the data to a file
-void PrintState(Params simP, TheState curState, string divide, string num)
-{
-    int i,j,k;
-
-    string OutFile;
-    OutFile = simP.outfname + divide + num;
-
-    cout << "Printing curState to file " << OutFile << endl;
-
-    //OutFile = OutFileName.c_str() + num.c_str();
-
-    ofstream myfile;
-    myfile.open(OutFile.c_str());
-
-    // First print inputs as the first line
-    myfile << simP.M << "," << simP.N << "," << simP.zL << "," << simP.rL << ","
-        << simP.mExcess << "," << simP.betaCyl << "," << simP.nCyl << "," << simP.Rbdy << ","
-        << simP.lambda << "," << simP.Pc2Code << "," << simP.Sol2Code << endl;
-
-    // Print VContour as the second line
-    myfile << curState.VContour[0];
-    for(j=1;j<simP.N;j++) myfile << "," << curState.VContour[j];
-    myfile << endl;
-
-    double DeltaR = simP.dR;
-    double DeltaZ = simP.dZ;
-
-    for(j=0; j< simP.M; j++) for(k=0;k<simP.N;k++)
-    {
-        double Rval = cPos(j,DeltaR);
-        double Zval = cPos(k,DeltaZ);
-        double curRho = curState.State[Q][j][k] * exp(-curState.State[Vpot][j][k]);
-        if(cPos(j,DeltaR)>curState.VContour[k]) curRho = 0;
-
-        myfile << j << "," << k << "," << Rval << "," << Zval;
-        for(i = 0; i< NStates; i++) myfile << "," << curState.State[i][j][k];
-        myfile << "," << curRho;
-        myfile << endl;
-    }
-    myfile.close();
 };
