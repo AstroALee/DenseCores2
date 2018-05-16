@@ -1,6 +1,40 @@
 
 #include "SetIC.H"
 
+int SetICnoPoints(Params& simP, TheState& curState)
+{
+  // Find the cylinder radius that has the desired lambda value
+  calcMagCylinder(simP,curState,0); // 0 = only sets VContour location (non-dim)
+
+  // Contour location at top will not change, save as parameter
+  simP.rCyl = curState.VContour[0];
+
+  // The contour location where lambda = simP.lambda helps set the non-dimensional units
+  unitConvert(simP);
+
+  // Sets initial conditions of cylinder for state (sets V and A)
+  calcMagCylinder(simP,curState,1);
+
+  // Get the first filament boundary
+  getVbdyDeltaPhi(simP, curState);
+
+  // Determine Q
+  updateQ(simP, curState, 0);
+
+  // Calculate dQ/dPhi
+  updateDQDPHI(simP, curState);
+
+  // Looks like we made it...
+  cout << "Done setting up initial conditions!" << endl;
+
+  // all went well
+  return 0;
+
+};
+
+
+
+
 int SetIC(Params& simP, TheState& curState)
 {
 
@@ -226,6 +260,61 @@ void setTheVbdy(Params simP, TheState& curState)
         double zNorm = cPos(j,simP.dZ)/simP.zL;
         curState.VContour[j] = radFromZed(simP.rCyl, simP.wRatio, zNorm);
     }
+};
+
+void getVbdyDeltaPhi(Params simP, TheState& curState)
+{
+    // Define the filament boundary as an analytic curve that starts at the
+    // anchor point where lambda = simP.lambda at the top
+
+    // radius of filament
+    double rFil = simP.rCyl;
+
+    // phi at this location
+    int i=0;
+    while(true){ i++; if(cPos(i,simP.dR)>=rFil) break; }
+    double PhiR = cPos(i,simP.dR)*curState.State[Apot][i][simP.N-1];
+    double PhiL = cPos(i-1,simP.dR)*curState.State[Apot][i-1][simP.N-1];
+    double m = (PhiR-PhiL)/simP.dR;
+    double phiAnchor = PhiL + m*(rFil - cPos(i-1,simP.dR));
+
+    // Top row is done
+    curState.VContour[simP.N-1] = rFil;
+
+    // For all other rows, find radius where phi = function(z; delPhi)
+    for(int j=simP.N-2;j>=0;j--)
+    {
+        double phiValue = phiAnchor + simP.delPhi*(1.0 - cPos(j,simP.dZ)/simP.zL);
+
+        // Find the radius where phi = phiValue
+        i=0;
+        while(true) { i++; if(cPos(i,simP.dR)*curState.State[Apot][i][j] >= phiValue) break; }
+        //cout << "Here! " << i << " " << j << endl;
+        double PhiR = cPos(i,simP.dR)*curState.State[Apot][i][j];
+        double PhiL = cPos(i-1,simP.dR)*curState.State[Apot][i-1][j];
+        m = simP.dR/(PhiR-PhiL);
+        curState.VContour[j] = cPos(i-1,simP.dR) + m*(phiValue-PhiL); // overwrites VContour
+        //cout << "V radius at " << j << " is " << curState.VContour[j] << endl;
+    }
+
+
+
+    // What is V at this location?
+    i=0; while(true){ i++; if(cPos(i,simP.dR)>=rFil) break; }
+    double Vr = curState.State[Vpot][i][simP.N-1];
+    double Vl = curState.State[Vpot][i-1][simP.N-1];
+    m = (Vr-Vl)/simP.dR;
+    double desV = Vl + m*(rFil-cPos(i-1,simP.dR));
+    cout << "Desired V value is " << desV << endl;
+
+    for(i=0;i<simP.M;i++)
+      for(int j=0;j<simP.N;j++)
+        if( curState.State[Vpot][i][j] >= desV ) curState.State[Vpot][i][j] = desV;
+
+
+    cout << "Done with Phi-Boundary V boundary " << endl;
+
+
 };
 
 void getVbdy(Params simP, TheState& curState)

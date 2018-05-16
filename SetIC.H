@@ -10,6 +10,8 @@
 #include "Integrals.H"
 #include "EvalV.H"
 
+void getVbdyDeltaPhi(Params simP, TheState& curState);
+int SetICnoPoints(Params& simP, TheState& curState);
 int SetIC(Params& simP, TheState& curState);
 void unitConvert(Params& simP);
 void initVpoints(Params& simP, TheState& curState, double undo, double smooth);

@@ -15,6 +15,7 @@
 #include "Integrals.H"
 #include "EvalV.H"
 
+void redrawVbdyDeltaPhi(Params simP, TheState& curState);
 double Finds0(double firsts0, Params simP, TheState curState);
 void FindSSGlobalRescaling(Params& simP, TheState& curState);
 void FindSSVfixedTopBot(Params& simP, TheState& curState);

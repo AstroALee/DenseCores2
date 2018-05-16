@@ -20,6 +20,7 @@ void FindSSGlobalRescaling(Params& simP, TheState& curState)
     curState += newState; // relaxes
     updateQ(simP, curState, 0);
     updateDQDPHI(simP, curState);
+    redrawVbdyDeltaPhi(simP, curState);
 
     curMass = Trap2D(simP,curState,s0);
     cout << "Current mass in the box is " << curMass/simP.Sol2Code << " Sol" << endl;
@@ -27,7 +28,7 @@ void FindSSGlobalRescaling(Params& simP, TheState& curState)
     cout << "Desired mass in the box is " << desMass/simP.Sol2Code << " Sol" << endl << endl;
 
 
-    for(int jj=0;jj<15;jj++)
+    for(int jj=0;jj<25;jj++)
     {
         s0 = Finds0(s0, simP, curState); //uses old value as first guess
         SolvePoissonS0(simP,curState,newState,s0);
@@ -35,6 +36,7 @@ void FindSSGlobalRescaling(Params& simP, TheState& curState)
         curState += newState; // relaxes
         updateQ(simP, curState, 0);
         updateDQDPHI(simP, curState);
+        redrawVbdyDeltaPhi(simP, curState);
         curMass = Trap2D(simP,curState,s0);
         cout << "Current mass in the box is " << curMass/simP.Sol2Code << " Sol" << endl;
         //cout << "Cylinder mass in the box is " << cylMass/simP.Sol2Code << " Sol" << endl;
@@ -449,7 +451,63 @@ void SingleSORUpdate(Params simP,TheState curState,TheState& newState)
 };
 
 
+void redrawVbdyDeltaPhi(Params simP, TheState& curState)
+{
+    // Define the filament boundary as an analytic curve that starts at the
+    // anchor point where lambda = simP.lambda at the top
 
+    // radius of filament
+    double rFil = simP.rCyl;
+
+    // phi at this location
+    int i=0;
+    while(true){ i++; if(cPos(i,simP.dR)>=rFil) break; }
+    double PhiR = cPos(i,simP.dR)*curState.State[Apot][i][simP.N-1];
+    double PhiL = cPos(i-1,simP.dR)*curState.State[Apot][i-1][simP.N-1];
+    double m = (PhiR-PhiL)/simP.dR;
+    double phiAnchor = PhiL + m*(rFil - cPos(i-1,simP.dR));
+
+    // Top row is done
+    curState.VContour[simP.N-1] = rFil;
+
+    // For all other rows, find radius where phi = function(z; delPhi)
+    for(int j=simP.N-2;j>=0;j--)
+    {
+        double phiValue = phiAnchor + simP.delPhi*(1.0 - cPos(j,simP.dZ)/simP.zL);
+
+        // Find the radius where phi = phiValue
+        i=0;
+        while(true) { i++; if(cPos(i,simP.dR)*curState.State[Apot][i][j] >= phiValue) break; }
+        //cout << "Here! " << i << " " << j << endl;
+        double PhiR = cPos(i,simP.dR)*curState.State[Apot][i][j];
+        double PhiL = cPos(i-1,simP.dR)*curState.State[Apot][i-1][j];
+        m = simP.dR/(PhiR-PhiL);
+        curState.VContour[j] = cPos(i-1,simP.dR) + m*(phiValue-PhiL); // overwrites VContour
+        //cout << "V radius at " << j << " is " << curState.VContour[j] << endl;
+    }
+
+
+
+    // What is V at this location?
+    i=0; while(true){ i++; if(cPos(i,simP.dR)>=rFil) break; }
+    double Vr = curState.State[Vpot][i][simP.N-1];
+    double Vl = curState.State[Vpot][i-1][simP.N-1];
+    m = (Vr-Vl)/simP.dR;
+    double desV = Vl + m*(rFil-cPos(i-1,simP.dR));
+    cout << "Desired V value is " << desV << endl;
+
+    for(i=0;i<simP.M;i++)
+      for(int j=0;j<simP.N;j++)
+        if( curState.State[Vpot][i][j] >= desV ) curState.State[Vpot][i][j] = desV;
+
+
+    cout << "Done with Phi-Boundary V boundary " << endl;
+
+
+
+
+
+};
 
 void SingleFullUpdate(Params simP,TheState curState,TheState& newState)
 {

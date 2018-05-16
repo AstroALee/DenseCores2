@@ -33,7 +33,8 @@ int main(int argc, char *argv[])
     TheState curState(SimParams.M,SimParams.N);
 
     // Initial Conditions
-    errTag = SetIC(SimParams,curState);
+    //errTag = SetIC(SimParams,curState);
+    errTag = SetICnoPoints(SimParams,curState);
     if(errTag) { Waterloo("main","error setting initial conditions"); return 1; }
 
     // If restarting, checks that the setup is correct and overwrites state
@@ -188,6 +189,8 @@ int ReadINI(Params& SimParams, int argc, char** filename)
 
     SimParams.denratio = reader.GetReal("simulation","dRatio",-1.0);
 
+    // filament boundary (delPhi)
+    SimParams.delPhi = reader.GetReal("boundary","delPhi",0.0);
 
     // Cylinder info
     SimParams.betaCyl = reader.GetReal("cylinder","beta",-1.0);

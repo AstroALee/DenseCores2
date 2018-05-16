@@ -95,7 +95,6 @@ void calcMagCylinder(Params& simP,TheState& curState,int dooutput)
                 double Acyl = LInt(out.xsave,out.ysave,rEdge,out.count,3) + 0.5*Binf*( pow(rPos,2) - pow(rEdge,2) );
                 Acyl = Acyl/rPos;
                 curState.State[Apot][i][j] = Acyl;
-
             }
 
             // Debugging stuff

@@ -82,7 +82,7 @@ if(idxS=='9' or idxS.lower()=='j'): idx = 9
 if(idxS=='10' or idxS.lower()=='curl'): idx = 10
 
 if(idx==-1):
-    print "ERROR with idx"
+    print("ERROR with idx")
     exit(1)
 
 # Are we converting to dimensional units?
@@ -173,7 +173,7 @@ YCord = []
 for i in range(0,NumLines):
     locAry = [ YCordAll[j] for j in Indices[i] ]
     YCord.append(locAry)
-print YCord
+print (YCord)
 
 
 # If plotting analytic solutions, construct those before unit conversions happen

@@ -154,12 +154,16 @@ void createPoissonVFixedTopRightMatrixS0(Params simP, TheState curState, MatrixX
         // Now we will change some of these values to employ the boundary conditions
 
         // The top boundary employs a V = Vcyl + alpha correction
-        //if( Zidx(s,M) == N-1 ) { Mdown = Mdown + Mup; Mup = 0;} // there is no up
+        /*
         if( Zidx(s,M) == N-1 )
         {
             Source(s) = curState.State[Vpot][Ridx(s,M)][N-1];
             Mcenter = 1; Mleft = 0; Mright = 0; Mdown = 0; Mup = 0;
         }
+        */
+
+        // Top employs Neumann
+        if( Zidx(s,M) == N-1 ) { Mdown = Mdown + Mup; Mup = 0;} // there is no up
 
 
         // The bottom boundary employs a dV/dz = 0 condition so at z=0, V(z=-1) = V(z=1)
@@ -178,7 +182,7 @@ void createPoissonVFixedTopRightMatrixS0(Params simP, TheState curState, MatrixX
             Mdown = 0.0;
             Mcenter = 1.0;
 
-            Source(s) = curState.State[Vpot][Ridx(s,M)][Zidx(s,M)];
+            Source(s) = Vedge; //curState.State[Vpot][Ridx(s,M)][Zidx(s,M)];
 
         }
         else if( cPos(Ridx(s,M)+1,DeltaR) > curState.VContour[Zidx(s,M)] ) // If we are less than a cell from the boundary

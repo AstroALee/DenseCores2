@@ -59,6 +59,9 @@ public:
 	double relaxfrac; 	// state relaxation fraction
 	double denratio;
 
+	// filament boundary
+	double delPhi; 
+
 	// waistband parameters
 	double wRatio;
 
@@ -68,7 +71,7 @@ public:
 	int pointLoopTotNum; // converged number of point masses
 	double pointLoopTol;
 	double alpha_fac;
-	double Vknob; 
+	double Vknob;
 
 
 	// SOR parameters

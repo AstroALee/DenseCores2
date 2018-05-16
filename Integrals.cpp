@@ -16,6 +16,7 @@ void CylinderMassCheck(Params simP, TheState curState)
     cout << "Cylinder mass in the box is " << cylMass/simP.Sol2Code << " Sol" << endl;
     cout << "   Difference is " << curMass/simP.Sol2Code - cylMass/simP.Sol2Code << " Sol" << endl;
     cout << "   Error (if mExcess=0) is " << 100*(curMass-cylMass)/cylMass << " %" << endl;
+    cout << "Central rho is " << curState.State[Q][0][0]*exp(-curState.State[Vpot][0][0]) << endl;
 };
 
 

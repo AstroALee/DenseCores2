@@ -192,15 +192,23 @@ void createAmpereMatrixFixedTopS0(Params simP, TheState curState, MatrixXd& AmMa
         // at top A = cylinder?
         if( Zidx(s,M) == N-1)
         {
-            if(Ridx(s,M)<M-1)
+            if(Ridx(s,M)<M-1) // not sure what these nested if statements are all about
             {
-                // enforce cylinder
-                Mdown = 0; Mup = 0; Mleft = 0; Mright = 0; Mcenter = 1;
-                Source(s) = simP.ATop[Ridx(s,M)];
 
-                // classic Neumann
-                //Mdown = Mup + Mdown;
-                //Mup = 0;
+                // Dirchlet inside filament, Neumann outside
+
+                if( cPos(Ridx(s,M),DeltaR) <= curState.VContour[Zidx(s,M)] ) 
+                {
+                  // enforce cylinder
+                  Mdown = 0; Mup = 0; Mleft = 0; Mright = 0; Mcenter = 1;
+                  Source(s) = simP.ATop[Ridx(s,M)];
+                }
+                else
+                {
+                  // classic Neumann
+                  Mdown = Mup + Mdown;
+                  Mup = 0;
+                }
 
                 //if(Ridx(s,M)==M-1) cout << "Value of ATop in upper-right = " << simP.ATop[M-1] << endl;
             }

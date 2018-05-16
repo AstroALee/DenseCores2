@@ -64,11 +64,11 @@ if(idxS=='8' or idxS.lower()=='phi'): idx = 9
 
 
 if(idx==-1):
-    print "ERROR with idx"
+    print("ERROR with idx")
     exit(1)
 if(len(sys.argv)<5):
-    print "Not enough inputs"
-    print "python contour.py field unitsYN LogYN #cont BfieldYN #lines"
+    print("Not enough inputs")
+    print("python contour.py field unitsYN LogYN #cont BfieldYN #lines")
     exit(1)
 
 
