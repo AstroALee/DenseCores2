@@ -10,6 +10,8 @@ void FindSSGlobalRescaling(Params& simP, TheState& curState)
     preState = curState;
 
     double s0 = Finds0(0.1, simP, curState);
+    cout << "First guess for s0 = " << s0 << endl;
+    if(isnan(s0)) s0 = 0.1;
 
     double cylMass = 2.0*simP.zL*simP.lambda;
     double desMass = cylMass + simP.mExcess;
@@ -20,7 +22,7 @@ void FindSSGlobalRescaling(Params& simP, TheState& curState)
     curState += newState; // relaxes
     updateQ(simP, curState, 0);
     updateDQDPHI(simP, curState);
-    redrawVbdyDeltaPhi(simP, curState);
+    redrawVbdyDeltaPhi(simP, curState); // redraws filament boundary based on delta phi only
 
     curMass = Trap2D(simP,curState,s0);
     cout << "Current mass in the box is " << curMass/simP.Sol2Code << " Sol" << endl;
@@ -28,9 +30,11 @@ void FindSSGlobalRescaling(Params& simP, TheState& curState)
     cout << "Desired mass in the box is " << desMass/simP.Sol2Code << " Sol" << endl << endl;
 
 
-    for(int jj=0;jj<25;jj++)
+    for(int jj=0;jj<simP.convergeLoopMax;jj++)
     {
         s0 = Finds0(s0, simP, curState); //uses old value as first guess
+        cout << "New guess for s0 = " << s0 << endl;
+        if(isnan(s0) or s0<-1.0 or s0>1.0) s0 = 0.1;
         SolvePoissonS0(simP,curState,newState,s0);
         SolveAmpereS0(simP,curState,newState,s0);
         curState += newState; // relaxes
@@ -72,7 +76,10 @@ double Finds0(double firsts0, Params simP, TheState curState)
 
         if(err<0.001)
         {
-            cout << "Converged: s0 = " << s0 << "  curMass = " << curMass/simP.Sol2Code << "  err = " << err << endl;
+            cout << "Converged: s0 = " << s0 << "  curMass = " << curMass/simP.Sol2Code << "  Mass err = " << err << endl;
+            double Nos0mass = Trap2D(simP,curState,0.0);
+            double MerrNos0 = fabs(Nos0mass - desMass)/desMass;
+            cout << "   Mass err without s0 = " << MerrNos0 << endl;
             break;
         }
 

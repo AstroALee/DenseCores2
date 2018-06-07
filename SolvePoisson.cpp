@@ -164,6 +164,13 @@ void createPoissonVFixedTopRightMatrixS0(Params simP, TheState curState, MatrixX
 
         // Top employs Neumann
         if( Zidx(s,M) == N-1 ) { Mdown = Mdown + Mup; Mup = 0;} // there is no up
+        if( Zidx(s,M) == N-1 )
+        {
+            Mdown = Mup = Mleft = Mright = 0;
+            Mcenter = 1.0;
+            Source(s) = simP.VTop[Ridx(s,M)] + (simP.Vknob/pow(simP.rCyl,2))*pow(cPos(Ridx(s,M),DeltaR),2) - simP.Vknob; // Vcylinder + 'gamma' parabolic dip
+
+        } // there is no up
 
 
         // The bottom boundary employs a dV/dz = 0 condition so at z=0, V(z=-1) = V(z=1)
