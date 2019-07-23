@@ -112,8 +112,9 @@ void unitConvert(Params& simP)
     simP.Sol2Code = 1/solCodeMass;
 
     cout << "Unit conversions:" << endl;
-    cout << "   Parsec to Code = " << simP.Pc2Code << endl;
-    cout << "   Solar mass to Code = " << simP.Sol2Code << endl;
+    cout << "    Parsec to Code = " << simP.Pc2Code << endl;
+    cout << "    Solar mass to Code = " << simP.Sol2Code << endl;
+    cout << "    Cs^2/G in cgs = " << Cbackground*Cbackground/Gcst  << endl; 
 
     // Non-dimensionalize the physical lengths
     simP.zL = simP.zL*simP.Pc2Code;

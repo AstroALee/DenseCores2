@@ -28,8 +28,8 @@ fEx = (1.0/1.6469)*mEx
 
 # beta 0.1, lambda 1
 rhoEdge12 = 0.5625
-rhoC12  = array([1.0,   1.49, 1.6913,   2.821, 3.6131, 4.2527,  5.3, 6.3,    7.4,  9 ,10.5, 13,15, 17,20])
-mEx12   = array([0.0,   0.123, 0.164,   0.37,0.45, 0.52,0.59 ,0.68,  0.75,     0.8,0.84, 0.86,0.83,0.8,  0.75])
+rhoC12  = array([1.0,   1.49, 1.6913,   2.821, 3.6131, 4.2527,  5.3,  6.5,   9 ,10.5, 13,15, 17])
+mEx12   = array([0.0,   0.123, 0.164,   0.37,0.45, 0.52,0.59 , 0.68,0.8,0.84, 0.86,0.83,0.8])
 Vknob12 = array([0.0, -0.05, -0.1, -0.15, -0.15, -0.15, -0.2 , -0.2, -0.2, -0.2])
 rhoB12 = rhoC12/rhoEdge12
 fEx12 = (1.0/0.82348)*mEx12
@@ -59,20 +59,36 @@ ax.tick_params(which='minor',size=7)
 
 #plt.scatter([12.8/rhoEdge1],[0.82],c='black',s=50,alpha=0.45)
 size=80
-plt.scatter([12.8/rhoEdge1],[0.81],c='blue',s=size,alpha=0.45)
-plt.scatter([13.65/rhoEdge1],[0.77],c='blue',s=size,alpha=0.45)
-plt.scatter([14.65/rhoEdge1],[0.72],c='blue',s=size,alpha=0.45)
+#plt.scatter([12.8/rhoEdge1],[0.81],c='blue',s=size,alpha=0.45)
+#plt.scatter([13.65/rhoEdge1],[0.77],c='blue',s=size,alpha=0.45)
+#plt.scatter([14.65/rhoEdge1],[0.72],c='blue',s=size,alpha=0.45)
 #plt.scatter([14.65/rhoEdge1],[0.7],c='black',s=50,alpha=0.15)
 #plt.scatter([15.15/rhoEdge1],[0.65],c='black',s=50,alpha=0.45)
 
 
-rhoC1_2 = array([1.0,     1.49, 1.6913,  2.438, 2.766,  3.6131, 4.2527,  5.3,  6.5, 7.5,   9 ,10.5, 12])
-mEx1_2   = array([0.0,   0.123, 0.164,   0.287, 0.328,  0.410, 0.459,0.538 , 0.625, 0.665, 0.69, 0.7, 0.69 ])
-plt.scatter(rhoC1_2/rhoEdge1,(1.0/0.82348)*mEx1_2,c='blue',s=80,alpha=0.45,label=r'$\lambda=1$ high-res, $\beta=1$')
+#rhoC1_2 = array([1.0,     1.49, 1.6913,  2.438, 2.766,  3.6131, 4.2527,  5.3,  6.5, 7.5,   9 ,10.5, 12])
+#mEx1_2   = array([0.0,   0.123, 0.164,   0.287, 0.328,  0.410, 0.459,0.538 , 0.625, 0.665, 0.69, 0.7, 0.69 ])
+#rhoC1_2 = array([1.0,  1.2,   1.49, 1.6913, 2.2, 2.438, 2.766,  3.2131])
+#mEx1_2   = array([0.0, 0.07,  0.123, 0.164, 0.24,  0.287, 0.328,  0.40  ])
 
-plt.scatter(rhoC12/rhoEdge12,(1.0/0.82348)*mEx12,c='black',s=80,alpha=0.45,label=r'$\lambda=1$, high-res, $\beta=0.1$')
 
-plt.title(r"$n=1/2$")
+rhoC1_2 = array([1.0,     1.49, 1.6913,  2.438, 2.766,  3.6131, 4.2527,  5.3,  6.5, 7.5,   9 ,10.5, 12,13.5,15])
+mEx1_2   = array([0.0,   0.123, 0.164,   0.287, 0.328,  0.410, 0.459,0.538 , 0.625, 0.665, 0.69, 0.7, 0.69,0.67,0.625 ])
+plt.scatter(0.9*rhoC1_2/rhoEdge1,(1.2/0.82348)*mEx1_2,c='blue',s=80,alpha=0.45,label=r'$\lambda=1$ high-res, $\beta=1$')
+
+
+rhoC12  = array([1.0,   1.49, 1.6913, 2.25,  2.821, 3.6131, 4.2527,  5.3,  6.5, 7.8,  9 ,10.5, 13,15, 17])
+mEx12   = array([0.0,   0.123, 0.164, 0.25,  0.37,0.45, 0.52,0.59 , 0.68,       0.74, 0.8,0.84, 0.86,0.85,0.82])
+plt.scatter(0.8*rhoC12/rhoEdge12,(1.2/0.82348)*mEx12,c='black',s=80,alpha=0.45,label=r'$\lambda=1$, high-res, $\beta=0.1$')
+
+
+
+#plt.scatter(rhoC1_2/rhoEdge1,(1.0/0.82348)*mEx1_2,c='blue',s=80,alpha=0.45,label=r'$\lambda=1$ high-res, $\beta=1$')
+#plt.scatter(rhoC1_2/rhoEdge1,1.5*(1.0/0.82348)*mEx1_2,c='blue',s=80,alpha=0.45,label=r'$\lambda=1$ high-res, $\beta=1$')
+
+#plt.scatter(rhoC12/rhoEdge12,(1.0/0.82348)*mEx12,c='black',s=80,alpha=0.45,label=r'$\lambda=1$, high-res, $\beta=0.1$')
+plt.title(r'$n=2/3$')
+
 #plt.colorbar(Vknob,label=r'Vknob | $\gamma$')
 #plt.scatter([3.05459/rhoEdge],[0.28125/1.6469],c='black',s=70,alpha=0.15)
 
@@ -90,4 +106,4 @@ ax2.tick_params(which='minor',size=7)
 '''
 
 
-plt.savefig('MoneyPlot.png')
+plt.savefig('MoneyPlot2.png')

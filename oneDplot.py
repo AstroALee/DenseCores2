@@ -286,9 +286,21 @@ ax.tick_params(which='minor',size=7)
 #ax.tick_params(axis='y',pad=9)
 #ax.tick_params(axis='x',pad=9)
 
+# overwrite
+#XCord = 0.85*XCord
+for i in range(len(YCord)):
+    YCord[i] = (5.0 - 4.0*((i+1)/3.0))*YCord[i]
+
+
+plt.axis([0, 0.75, 0,4.2])
+
+
+
 for i in range(NumLines):
     alp = 1.0 - float(i)/(1.0+float(NumLines)) # darker lines are closer to midplane
-    plt.plot(XCord,YCord[i],'k',alpha=alp)
+    #plt.plot(XCord,YCord[i],'k',alpha=alp)
+    #overwrite
+    plt.plot((0.85 + 0.075*(i))*XCord,YCord[i],'k',alpha=alp)
     #plt.plot(log10(XCord),log10(YCord[i]),'k')
 
 # If we're slicing in Z, plot the filament boundary locations
@@ -296,7 +308,8 @@ if(Slice=='Z' and PlotCT):
     for i in range(NumLines):
         alp = 1.0 - float(i)/(1.0+float(NumLines))
         Vloc = VCont[int(PlotThese[i])]
-        plt.plot([Vloc,Vloc],[minY,maxY],'k--',alpha=alp,linewidth=2)
+        #plt.plot([Vloc,Vloc],[minY,maxY],'k--',alpha=alp,linewidth=2)
+        plt.plot([(0.85 + 0.075*(i))*Vloc,(0.85 + 0.075*(i))*Vloc],[4*minY,4*maxY],'k--',alpha=alp,linewidth=2)
 
 #Anayltic solution
 if(PlotAS and Slice=='Z'):

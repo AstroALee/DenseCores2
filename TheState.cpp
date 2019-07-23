@@ -17,6 +17,7 @@ TheState::TheState(int M, int N)
     }
 
     this->VContour = new double[N];
+		this->dMdPhi   = new double[M];
 
 	// In case it's not initialized to zero
    for(i=0;i<NStates;i++) for(j=0;j<M;j++) for(k=0;k<N;k++) State[i][j][k] = 0.0;
@@ -78,7 +79,8 @@ TheState& TheState::operator=(const TheState& copyfrom)
 
 	int i,j,k;
 	for(i=0;i<NStates;i++) for(j=0;j<M;j++) for(k=0;k<N;k++) (this)->State[i][j][k] = copyfrom.State[i][j][k];
-    for(k=0;k<N;k++) this->VContour[k] = copyfrom.VContour[k];
+  for(k=0;k<N;k++) this->VContour[k] = copyfrom.VContour[k];
+	for(k=0;k<M;k++) this->dMdPhi[k] = copyfrom.dMdPhi[k];
 
 	return *this;
 };

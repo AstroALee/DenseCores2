@@ -42,6 +42,11 @@ int main(int argc, char *argv[])
     {
         errTag = LoadRestart(SimParams,curState);
         if(errTag) { Waterloo("main","restarting from file with different parameters"); return 1; }
+
+        if(SimParams.squeeze)
+        {
+          SqueezeState(SimParams,curState);
+        }
     }
 
     // Mass in box
@@ -74,6 +79,73 @@ int main(int argc, char *argv[])
     // Let's go home!
     cout << endl;
     return 0;
+};
+
+
+void SqueezeState(Params& simP, TheState& curState)
+{
+  updateQ(simP, curState, 0);
+  updateDQDPHI(simP, curState);
+  // calc dMdPHI
+  calcDMDPHI(simP, curState);
+
+  // Now squeeze
+
+  double fracSqueeze = 0.9;
+
+
+  double PhiTemp[simP.M][simP.N];
+  double VTemp[simP.M][simP.N];
+  // create new values for Phi
+  for(int i=0;i<simP.M;i++) for(int j=0;j<simP.N;j++)
+  {
+    double squeeze_alp = 1.0 - (( (1.0 - fracSqueeze)*curState.VContour[0]/curState.VContour[i] )*( 1.0 - cPos(i,simP.dZ)/simP.zL ));
+    if(squeeze_alp<=0) squeeze_alp = 0.00000001;
+
+    double rescaled_r = cPos(i,simP.dR)/squeeze_alp;
+
+    // find indices for re-scaled r
+    int lIdx = -1;
+    for(int k=0;k<simP.M-1;k++)
+    {
+      lIdx = k ;
+      if( cPos(k,simP.dR) >= rescaled_r) break; // if never found, k = M-2 (should be outside the bndy anyway)
+    }
+
+    // Find interpolation factor
+    double int_factor = (cPos(lIdx,simP.dR)-rescaled_r)/simP.dR; // 0 <= <= 1
+
+    // Use interpolated values in new location
+    PhiTemp[i][j] =  ((1.0-int_factor)*cPos(lIdx,simP.dR)*curState.State[Apot][lIdx][j]) + (int_factor*cPos(lIdx+1,simP.dR)*curState.State[Apot][lIdx+1][j]);
+    VTemp[i][j]   =  ((1.0-int_factor)*curState.State[Vpot][lIdx][j]) + (int_factor*curState.State[Vpot][lIdx+1][j]);
+  }
+
+  // Update contour location
+  for(int i=0;i<simP.N;i++)
+  {
+    double squeeze_alp = 1.0 - (( (1.0 - fracSqueeze)*curState.VContour[0]/curState.VContour[i] )*( 1.0 - cPos(i,simP.dZ)/simP.zL ));
+    curState.VContour[i] = squeeze_alp*curState.VContour[i];
+  }
+
+  // overwrite V and A (hence also phi)
+  for(int i=0;i<simP.M;i++) for(int j=0;j<simP.N;j++)
+  {
+    if(cPos(i,simP.dR) < curState.VContour[j])
+      curState.State[Vpot][i][j] = VTemp[i][j];
+    else
+      curState.State[Vpot][i][j] = 0.0;
+    if(i>0)
+      curState.State[Apot][i][j] = PhiTemp[i][j]/cPos(i,simP.dR);
+    else
+      curState.State[Apot][i][j] = 0.0;
+  }
+
+
+
+
+
+
+
 };
 
 
@@ -218,6 +290,7 @@ int ReadINI(Params& SimParams, int argc, char** filename)
     // outputs
     SimParams.outfname = reader.Get("output","filename","DEFAULTNAME");
     SimParams.restart = reader.GetInteger("output","restart",0);
+    SimParams.squeeze = reader.GetInteger("output","squeeze",0);
     SimParams.readinfname = reader.Get("output","inputfn","DEFAULTNAME");
 
 

@@ -34,7 +34,9 @@ void FindSSGlobalRescaling(Params& simP, TheState& curState)
     {
         s0 = Finds0(s0, simP, curState); //uses old value as first guess
         cout << "New guess for s0 = " << s0 << endl;
-        if(isnan(s0) or s0<-1.0 or s0>1.0) s0 = 0.1;
+        if(jj<5) s0 = 10; //40.0 - 35.0*((double) jj)/5.0;
+        if(isnan(s0) or s0<-1.0 or s0>70.0) s0 = 1.5;
+
         SolvePoissonS0(simP,curState,newState,s0);
         SolveAmpereS0(simP,curState,newState,s0);
         curState += newState; // relaxes

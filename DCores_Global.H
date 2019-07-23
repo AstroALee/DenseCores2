@@ -60,7 +60,7 @@ public:
 	double denratio;
 
 	// filament boundary
-	double delPhi; 
+	double delPhi;
 
 	// waistband parameters
 	double wRatio;
@@ -83,6 +83,7 @@ public:
 	// Output
 	string outfname;
 	int restart;  // are we restarting from a file?
+	int squeeze;  // are we squeezing a state? 
 	string readinfname;
 
 	// Units

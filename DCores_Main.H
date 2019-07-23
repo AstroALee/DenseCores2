@@ -11,6 +11,9 @@
 #include "Integrals.H"
 #include "FindSS.H"
 #include "PrintState.H"
+#include "UpdateQ.H"
+#include "UpdateDQDPHI.H"
+#include "calcDMDPHI.H"
 
 // How long did all of this take?
 void ExecutionTime(clock_t start, clock_t end );
@@ -27,5 +30,7 @@ int ReadINI(Params& SimParams, int argc, char** filename);
 void PrintState(Params simP, TheState curState, string divide, string num);
 
 int LoadRestart(Params& simP, TheState& curState);
+
+void SqueezeState(Params& simP, TheState& curState);
 
 #endif // __DCORES_MAIN_H__

@@ -13,6 +13,7 @@ public:
 	double ***State;
 
 	double *VContour; // radial location of filament contour
+	double *dMdPhi  ; // for squeezed states, use this to enforce Q
 
 	TheState& operator=(const TheState& copyfrom);
 	TheState& operator+=(const TheState& relaxfrom);
